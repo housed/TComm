@@ -239,7 +239,7 @@ void Server::SendData(void *info)
 
 			if ( *client_socket != INVALID_SOCKET ) 
 			{
-				result = send(*client_socket, "This message was sent from Server::SendData() -> send().\n", DEFAULT_BUFLEN, 0);
+				result = send(*client_socket, "This string was sent from Server::SendData().\n", DEFAULT_BUFLEN, 0);
 				if ( result == SOCKET_ERROR ) 
 				{
 					printf("send() failed with error: %d\n", WSAGetLastError());
