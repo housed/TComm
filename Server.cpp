@@ -1,6 +1,7 @@
 #include "Server.h"
 
-Server::Server() {
+Server::Server() 
+{
 	result_ = NULL;
 	ZeroMemory(&hints_, sizeof(hints_));
 	hints_.ai_family = AF_INET;
@@ -15,96 +16,54 @@ Server::Server() {
 	}
 }
 
-Server::~Server() {
+Server::~Server() 
+{
 
 }
 
-int Server::Execute() {
+int Server::Execute() 
+{
 	Initialize();
 	Run();
-	Shutdown();
-	
-	/*if ( Initialize() != 0 ) {
-		return 1;
-	}
-
-	if ( Run() != 0 ) {
-		return 1;
-	}
-
-	Shutdown();*/
-	
+	Shutdown();	
 	return 0;
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) 
+{
 	Server server;
-
 	server.Execute();
-
 	return 0;
 }
 
-int Server::Initialize() {
-	std::cout << "Start: Server::Initialize()\n";
-	
+int Server::Initialize()
+{
 	SetConsoleTitle("Server");
-
 	InitializeWinsock();
 	ResolveServer();
 	CreateListenSocket();
 	BindListenSocket();
-
-	/*int result = 0;
-
-	result = InitializeWinsock();
-	if ( result != 0 ) {
-		return 1;
-	}
-
-	result = ResolveServer();
-	if ( result != 0 ) {
-		return 1;
-	}
-
-	result = CreateListenSocket();
-    if ( result != 0 ) {
-		return 1;
-	}
-
-	result = BindListenSocket();
-	if ( result == SOCKET_ERROR ) {
-		return 1;
-	}*/
-
-	std::cout << "End: Server::Initialize()\n";
-
 	return 0;
 }
 
 int Server::Run() 
 {	
 	HandleConnections();
-	
-	/*int result = 0;
-
-	result = HandleIncomingConnection();
-	if (result != 0 ) {
-		return 1;
-	}*/
-
 	return 0;
 }
 
-void Server::Shutdown() {
+void Server::Shutdown() 
+{
 	closesocket(listen_socket_);
 	WSACleanup();
 }
 
-int Server::InitializeWinsock() {
+int Server::InitializeWinsock() 
+{
 	WSADATA wsaData;
 	int wsaStatus = WSAStartup(MAKEWORD(2, 2), &wsaData);
-	if ( wsaStatus != 0 ) {
+	if ( wsaStatus != 0 ) 
+	{
 		printf("WSAStartup failed with error: %d\n", wsaStatus);
 		return 1;
 	}
@@ -112,9 +71,11 @@ int Server::InitializeWinsock() {
 	return 0;
 }
 
-int Server::ResolveServer() {
+int Server::ResolveServer() 
+{
 	int result = getaddrinfo(NULL, DEFAULT_PORT, &hints_, &result_);
-	if ( result != 0 ) {
+	if ( result != 0 ) 
+	{
 		printf("getaddrinfo failed with error: %d\n", result);
 		WSACleanup();
 		return 1;
@@ -123,9 +84,11 @@ int Server::ResolveServer() {
 	return 0;
 }
 
-int Server::CreateListenSocket() {
+int Server::CreateListenSocket() 
+{
 	listen_socket_ = socket(result_->ai_family, result_->ai_socktype, result_->ai_protocol);
-	if ( listen_socket_ == INVALID_SOCKET ) {
+	if ( listen_socket_ == INVALID_SOCKET ) 
+	{
 		printf("socket failed with error: %ld\n", WSAGetLastError());
 		freeaddrinfo(result_);
 		WSACleanup();
@@ -135,9 +98,11 @@ int Server::CreateListenSocket() {
 	return 0;
 }
 
-int Server::BindListenSocket() {
+int Server::BindListenSocket() 
+{
 	int result = bind(listen_socket_, result_->ai_addr, (int)result_->ai_addrlen);
-	if ( result == SOCKET_ERROR ) {
+	if ( result == SOCKET_ERROR ) 
+	{
 		printf("bind failed with error: %d\n", WSAGetLastError());
 		freeaddrinfo(result_);
 		closesocket(listen_socket_);
@@ -169,12 +134,13 @@ int Server::HandleConnections()
 				g_num_clients_connected--;
 			}
 		}
-		*/
+		
 
 		if ( g_num_clients_connected >= MAXCONNECTIONS ) 
 		{
 			continue;
 		}
+		*/
 		
 		ListenForConnection();
 		AcceptConnection();
@@ -183,7 +149,7 @@ int Server::HandleConnections()
 
 		Connection client;
 		client.socket = client_sockets_;
-		client.id = g_num_clients_connected;
+		client.id = g_num_clients_connected - 1;
 
 		_beginthread(ReceiveData, 0, &client);
 		//_beginthread(ReceiveData, 0, NULL);  //test
@@ -194,9 +160,11 @@ int Server::HandleConnections()
 	return 0;
 }
 
-int Server::ListenForConnection() {
+int Server::ListenForConnection() 
+{
 	int result = listen(listen_socket_, SOMAXCONN);
-	if ( result == SOCKET_ERROR ) {
+	if ( result == SOCKET_ERROR ) 
+	{
 		printf("listen failed with error: %d\n", WSAGetLastError());
 		closesocket(listen_socket_);
 		WSACleanup();
@@ -206,9 +174,11 @@ int Server::ListenForConnection() {
 	return 0;
 }
 
-int Server::AcceptConnection() {
+int Server::AcceptConnection() 
+{
 	client_sockets_[g_num_clients_connected] = accept(listen_socket_, NULL, NULL);
-	if ( client_sockets_[g_num_clients_connected] == INVALID_SOCKET ) {
+	if ( client_sockets_[g_num_clients_connected] == INVALID_SOCKET )
+	{
 		printf("accept failed with error: %d\n", WSAGetLastError());
 		closesocket(listen_socket_);
 		WSACleanup();
@@ -223,23 +193,23 @@ void Server::SendData(void *info)
 	std::cout << "Start: Server::SendData()\n";
 
 	SOCKET *client_socket = (SOCKET *)info;
+	SOCKET *start = client_socket;
 	SOCKET *temp = NULL;
 	int result = 0;	
-	int counter = 0;
 
 	while ( 1 ) 
 	{		
 		for ( int i = 0; i < g_num_clients_connected; i++ ) 
 		{
 			temp = client_socket + (g_num_clients_connected - 1);
-			counter++;
 			
 			//std::cout << "Address of client_socket[" << i << "]: " << client_socket << "\n"; 
 			//std::cout << "Value of client_socket[" << i << "]: " << *client_socket << "\n";		
 
 			if ( *client_socket != INVALID_SOCKET ) 
 			{
-				result = send(*client_socket, "This string was sent from Server::SendData().\n", DEFAULT_BUFLEN, 0);
+				result = send(*client_socket, NULL, 0, 0);
+				//result = send(*client_socket, "This string was sent from Server::SendData().\n", DEFAULT_BUFLEN, 0);
 				if ( result == SOCKET_ERROR ) 
 				{
 					printf("send() failed with error: %d\n", WSAGetLastError());
@@ -251,142 +221,25 @@ void Server::SendData(void *info)
 				std::cout << "Swapping " << client_socket << " with " << temp << "\n";
 				std::swap(*client_socket, *temp);
 				g_num_clients_connected--;
+				break;
 			}	
-			client_socket++;
 		}
-		client_socket-=counter;
-		counter = 0;
+
+		client_socket, temp = start;
 	} 
-
-	/*
-	while ( 1 ) 
-	{
-		
-		for ( int i = 0; i < g_num_clients_connected; i++ ) 
-		{
-			client_socket+=i;
-			temp = client_socket + (g_num_clients_connected - 1);
-
-			if ( *client_socket == INVALID_SOCKET ) 
-			{
-				std::cout << "A client has disconnected.\n";
-				std::cout << "Swapping " << client_socket << " with " << temp << "\n";
-				std::swap(*client_socket, *temp);
-				//g_num_clients_connected--;
-			}
-		}
-		
-
-		client_socket = first_position;
-		
-		for ( int i = 0; i < MAXCONNECTIONS; i++ ) 
-		{
-			
-			//std::cout << "Address of client_socket[" << i << "]: " << client_socket << "\n"; 
-			//std::cout << "Value of client_socket[" << i << "]: " << *client_socket << "\n";
-			
-
-			if ( *client_socket != INVALID_SOCKET ) 
-			{
-				result = send(*client_socket, "This message was sent from Server::SendData() -> send().\n", DEFAULT_BUFLEN, 0);
-				if ( result == SOCKET_ERROR ) 
-				{
-					printf("send() failed with error: %d\n", WSAGetLastError());
-					//closesocket(*client_socket);
-					//*client_socket = INVALID_SOCKET;
-					//g_num_clients_connected--;
-				}
-			}
-			else 
-			{
-				//std::cout << "Slot " << i << " is empty...\n";
-			}		
-			
-			client_socket++; //Move pointer to the next client socket in memory
-		}
-		
-		client_socket -= MAXCONNECTIONS; //Bring pointer back to first client socket in memory
-	} 
-	*/
-
-	/*
-	while ( counter < 3 ) {
-        for ( int i = 0; i < MAXCONNECTIONS; i++ ) {
-           std::cout << "Address of socket[" << i << "]: " << client_socket << "\n";
-           client_socket++;
-        }
-        client_socket = client_socket - MAXCONNECTIONS;
-		counter++;
-     }
-	 */
-	
-	/*  THIS IS GOOD, BUT IS MORE OF A DEBUG
-	do {
-		std::cout << "Start: DO-WHILE LOOP Server::SendData()\n";
-
-		for ( int i = 0; i < MAXCONNECTIONS; i++ ) {
-			std::cout << "-----Start of FOR LOOP in Server::SendData()-----\n";
-
-			std::cout << "Address of client_socket[" << i << "]: " << client_socket << "\n"; 
-			std::cout << "Value of client_socket[" << i << "]: " << *client_socket << "\n";
-			
-			if ( *client_socket != INVALID_SOCKET ) {
-				std::cout << "Start: Server::SendData() send()\n";
-				result = send(*client_socket, "This message was sent from Server::SendData() -> send().\n", DEFAULT_BUFLEN, 0);
-				std::cout << "Status: " << result << "\n";
-				std::cout << "End: Server::SendData() send()\n";
-			}
-
-			if ( result == SOCKET_ERROR ) {
-				printf("send failed with error: %d\n", WSAGetLastError());
-				closesocket(*client_socket);
-				*client_socket = INVALID_SOCKET;
-			}
-
-			client_socket++; 
-
-			std::cout << "End of FOR LOOP in Server::SendData()\n";
-		}
-
-		client_socket -= MAXCONNECTIONS;
-
-		std::cout << "End: DO-WHILE LOOP Server::SendData()\n";
-	} while (result > 0 );
-	*/
-
-	/*
-	Connection *client_connections = (Connection *)info;
-
-	do {
-		for ( int i = 0; i < MAXCONNECTIONS; i++ ) {
-			if ( client_connections->socket[i] != INVALID_SOCKET ) {
-				result = send(client_connections->socket[i], "This message was sent from Server::SendData() -> send().\n", DEFAULT_BUFLEN, 0);
-			}
-
-			std::cout << result << "\n";
-
-			if ( result == SOCKET_ERROR ) {
-					printf("send failed with error: %d\n", WSAGetLastError());
-					closesocket(client_connections->socket[i]);
-					client_connections->socket[i] = INVALID_SOCKET;
-			}
-		}
-	} while (result > 0 );
-	*/
 	
 	std::cout << "End: Server::SendData()\n";
 }
 
 void Server::ReceiveData(void *info) 
 {
-	int result = 0;
 	Connection *client = (Connection *)info;
 	int client_id = client->id;
+	int result = 0;
 
 	std::cout << "A Server::ReceiveData() thread has started for client_id " << client_id << "\n";
 
-	do 
-	{
+	do {
 		result = recv(client->socket[client_id], NULL, NULL, 0);		
 		if ( result > 0 ) 
 		{ 
@@ -411,6 +264,6 @@ void Server::ReceiveData(void *info)
 
 	closesocket(client->socket[client_id]);
 	client->socket[client_id] = INVALID_SOCKET;
-	
-	//g_num_clients_connected--;
+
+	std::cout << "client_id " << client_id << " was shutdown and closed.\n";
 }
