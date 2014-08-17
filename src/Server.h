@@ -24,12 +24,14 @@
 
 int g_num_clients_connected = 0;
 
-struct Connection {
+struct Connection 
+{
 	int id;
 	SOCKET *socket;
 };
 
-class Server {
+class Server 
+{
 private:	
 	struct addrinfo *result_;
 	struct addrinfo hints_;
