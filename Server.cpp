@@ -10,8 +10,10 @@ Server::Server()
 	hints_.ai_flags = AI_PASSIVE;
 
 	listen_socket_ = INVALID_SOCKET;
+
 	ZeroMemory(&client_sockets_, sizeof(client_sockets_));
-	for ( int i = 0; i < MAXCONNECTIONS; i++ ) {
+	for ( int i = 0; i < MAXCONNECTIONS; i++ ) 
+	{
 		client_sockets_[i] = INVALID_SOCKET; 
 	}
 }
@@ -152,7 +154,6 @@ int Server::HandleConnections()
 		client.id = g_num_clients_connected - 1;
 
 		_beginthread(ReceiveData, 0, &client);
-		//_beginthread(ReceiveData, 0, NULL);  //test
 	}
 
 	std::cout << "End: Server::HandleIncomingConnection()\n";
@@ -234,13 +235,13 @@ void Server::SendData(void *info)
 void Server::ReceiveData(void *info) 
 {
 	Connection *client = (Connection *)info;
-	int client_id = client->id;
 	int result = 0;
 
-	std::cout << "A Server::ReceiveData() thread has started for client_id " << client_id << "\n";
+	std::cout << "A Server::ReceiveData() thread has started for client_id " << client->id << "\n";
 
 	do {
-		result = recv(client->socket[client_id], NULL, NULL, 0);		
+		result = recv(client->socket[client->id], NULL, 0, 0);
+		//result = recv(client->socket[client->id], NULL, DEFAULT_BUFLEN, 0);		
 		if ( result > 0 ) 
 		{ 
 			std::cout << "Bytes received: " << result << "\n";
@@ -252,18 +253,17 @@ void Server::ReceiveData(void *info)
 		else 
 		{
 		    printf("recv() failed with error: %d\n", WSAGetLastError());
-			continue;
 		}
 	} while ( result > 0 );
 
-	result = shutdown(client->socket[client_id], SD_SEND);
+	result = shutdown(client->socket[client->id], SD_SEND);
 	if ( result == SOCKET_ERROR ) 
 	{
 		printf("shutdown failed with error: %d\n", WSAGetLastError());
 	}
 
-	closesocket(client->socket[client_id]);
-	client->socket[client_id] = INVALID_SOCKET;
+	closesocket(client->socket[client->id]);
+	client->socket[client->id] = INVALID_SOCKET;
 
-	std::cout << "client_id " << client_id << " was shutdown and closed.\n";
+	std::cout << "client_id " << client->id << " was shutdown and closed.\n";
 }

@@ -54,7 +54,7 @@ void SendData(void* info)
 		memcpy(packet->outbound_message, g_username, strlen(g_username) + 1);
 		memcpy(packet->outbound_message + sizeof(g_username), msg, strlen(msg) + 1);
 
-		status = send(*packet->ClientSocket, packet->outbound_message, sizeof(packet->outbound_message), 0);
+		//status = send(*packet->ClientSocket, packet->outbound_message, sizeof(packet->outbound_message), 0);
 		if ( status == SOCKET_ERROR ) 
 		{
 			printf("send failed with error: %d\n", WSAGetLastError());
