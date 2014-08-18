@@ -1,3 +1,3 @@
 MadGab
 ===========
-This is a simple server/client chat application written with the Winsock library.
+This is a simple server/client chat application that utilizes the Winsock library.
