@@ -240,7 +240,7 @@ void Server::ReceiveData(void *info)
 	std::cout << "A Server::ReceiveData() thread has started for client_id " << client->id << "\n";
 
 	do {
-		result = recv(client->socket[client->id], NULL, 0, 0);
+		result = recv( client->socket[client->id], NULL, 0, 0 );
 		//result = recv(client->socket[client->id], NULL, DEFAULT_BUFLEN, 0);		
 		if ( result > 0 ) 
 		{ 
@@ -256,13 +256,13 @@ void Server::ReceiveData(void *info)
 		}
 	} while ( result > 0 );
 
-	result = shutdown(client->socket[client->id], SD_SEND);
+	result = shutdown( client->socket[client->id], SD_BOTH );
 	if ( result == SOCKET_ERROR ) 
 	{
-		printf("shutdown failed with error: %d\n", WSAGetLastError());
+		printf( "shutdown failed with error: %d\n", WSAGetLastError() );
 	}
 
-	closesocket(client->socket[client->id]);
+	closesocket( client->socket[client->id] );
 	client->socket[client->id] = INVALID_SOCKET;
 
 	std::cout << "client_id " << client->id << " was shutdown and closed.\n";
