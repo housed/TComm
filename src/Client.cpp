@@ -181,7 +181,7 @@ int main(int argc, char **argv) {
 	handle[1] = (HANDLE)_beginthread(ReceiveData, 0, &packet);
 	WaitForMultipleObjects(2, handle, false, INFINITE);
 
-	status = shutdown(ConnectSocket, SD_SEND);
+	status = shutdown(ConnectSocket, SD_BOTH);
 	if ( status == SOCKET_ERROR ) 
 	{
 		printf("shutdown failed with error: %d\n", WSAGetLastError());
