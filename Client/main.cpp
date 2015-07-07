@@ -7,6 +7,7 @@
 #include <stdio.h>
 
 #include <iostream>
+#include <process.h>
 
 
 // Need to link with Ws2_32.lib, Mswsock.lib, and Advapi32.lib
@@ -18,6 +19,86 @@
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "27015"
 
+void SendData(void *info)
+{
+	SOCKET *ConnectSocket = (SOCKET *)info;
+	char sendbuf[DEFAULT_BUFLEN];
+	int iResult = 0;
+
+	do
+	{
+		printf(" > ");
+		std::cin.getline(sendbuf, DEFAULT_BUFLEN);
+
+		if (strcmp(sendbuf, "/disconnect") == 0)
+		{
+			// shutdown the connection since no more data will be sent
+			iResult = shutdown(*ConnectSocket, SD_SEND);
+			if (iResult == SOCKET_ERROR)
+			{
+				printf("shutdown failed with error: %d\n", WSAGetLastError());
+				closesocket(*ConnectSocket);
+				WSACleanup();
+				return;
+			}
+		}
+		else
+		{
+			// Send buffer.
+			iResult = send(*ConnectSocket, sendbuf, (int)strlen(sendbuf), 0);
+			if (iResult == SOCKET_ERROR)
+			{
+				printf("send failed with error: %d\n", WSAGetLastError());
+				closesocket(*ConnectSocket);
+				WSACleanup();
+				return;
+			}
+
+			/*printf("\nBytes sent: %d\n", iResult);
+
+			printf("Message sent: ");
+			for (int i = 0; i < iResult; i++)
+			{
+				printf("%c", sendbuf[i]);
+			}
+			printf("\n");*/
+		}
+
+	} while (iResult > 0);
+}
+
+void ReceiveData(void *info)
+{
+	SOCKET *ConnectSocket = (SOCKET *)info;
+	char recvbuf[DEFAULT_BUFLEN];
+	int iResult;
+	int recvbuflen = DEFAULT_BUFLEN;
+
+	do
+	{
+		iResult = recv(*ConnectSocket, recvbuf, recvbuflen, 0);
+		if (iResult > 0)
+		{
+			/*printf("Bytes received: %d\n", iResult);
+			printf("Message received: ");
+			for (int i = 0; i < iResult; i++)
+			{
+				printf("%c", recvbuf[i]);
+			}
+			printf("\n\n");*/
+		}
+		else if (iResult == 0)
+		{
+			printf("\nConnection closed\n");
+		}
+		else
+		{
+			printf("\nrecv failed with error: %d\n", WSAGetLastError());
+		}
+
+	} while (iResult > 0);
+}
+
 int main(int argc, char **argv)
 {
 	WSADATA wsaData;
@@ -25,10 +106,10 @@ int main(int argc, char **argv)
 	struct addrinfo *result = NULL,
 		*ptr = NULL,
 		hints;
-	char sendbuf[DEFAULT_BUFLEN];
+	/*char sendbuf[DEFAULT_BUFLEN];
 	char recvbuf[DEFAULT_BUFLEN];
+	int recvbuflen = DEFAULT_BUFLEN;*/
 	int iResult;
-	int recvbuflen = DEFAULT_BUFLEN;
 
 	// Validate the parameters
 	if (argc != 2)
@@ -92,6 +173,12 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	HANDLE handle[2];
+	handle[0] = (HANDLE)_beginthread(SendData, 0, &ConnectSocket);
+	handle[1] = (HANDLE)_beginthread(ReceiveData, 0, &ConnectSocket);
+	WaitForMultipleObjects(2, handle, TRUE, INFINITE);
+
+	/*
 	do
 	{
 		std::cout << "Enter message: ";
@@ -151,9 +238,12 @@ int main(int argc, char **argv)
 		{
 			printf("recv failed with error: %d\n", WSAGetLastError());
 		}		
+
 	} while (iResult > 0);
+	*/
 
 	// cleanup
+	printf("Cleanup!\n");
 	closesocket(ConnectSocket);
 	WSACleanup();
 
