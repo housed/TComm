@@ -18,7 +18,16 @@
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "27015"
 
-void SendData(void *info)
+struct SHAREDDATA
+{
+	char recvbuf[DEFAULT_BUFLEN] = { NULL };
+	int recvbuflen = DEFAULT_BUFLEN;
+	int iResult = 0;
+	int iSendResult = 0;
+	std::vector<SOCKET> ClientSocket = { INVALID_SOCKET };
+};
+
+/*void SendData(void *info)
 {
 	std::vector<SOCKET> *ClientSocket = (std::vector<SOCKET> *)info;
 	char recvbuf[DEFAULT_BUFLEN];
@@ -39,6 +48,83 @@ void SendData(void *info)
 			}
 		}
 	} while (iResult > 0);
+}*/
+
+void outbound(void *info)
+{
+	SHAREDDATA *SharedData = (SHAREDDATA *)info;
+	int iSendResult = 0;
+
+	while (1)
+	{
+		if (SharedData->iResult > 0)
+		{
+			for (int i = 0; i < SharedData->ClientSocket.size(); i++)
+			{
+				iSendResult = send(SharedData->ClientSocket[i], SharedData->recvbuf, SharedData->iResult, 0);
+				if (iSendResult == SOCKET_ERROR)
+				{
+					printf("send failed with error: %d\n", WSAGetLastError());
+					closesocket(SharedData->ClientSocket[i]);
+					SharedData->ClientSocket[i] = INVALID_SOCKET;
+					SharedData->ClientSocket.erase(SharedData->ClientSocket.begin() + i);
+				}
+				else
+				{
+					printf("Bytes sent: %d\n", iSendResult);
+					printf("Message sent: ");
+					for (int i = 0; i < iSendResult; i++)
+					{
+						printf("%c", SharedData->recvbuf[i]);
+					}
+					printf("\n\n");
+				}
+			}
+
+			SharedData->iResult = 0;
+		}
+	}
+}
+
+void inbound(void *info)
+{
+	SHAREDDATA *SharedData = (SHAREDDATA *)info;
+	SOCKET ClientSocket = SharedData->ClientSocket.back();
+
+	do {
+
+		SharedData->iResult = recv(ClientSocket, SharedData->recvbuf, SharedData->recvbuflen, 0);
+
+		if (SharedData->iResult > 0)
+		{
+			
+		}
+		else if (SharedData->iResult == 0)
+		{
+			printf("Connection closing...\n");
+		}
+		else
+		{
+			printf("recv failed with error: %d\n", WSAGetLastError());
+			closesocket(ClientSocket);
+			ClientSocket = INVALID_SOCKET;
+			return;
+		}
+
+	} while (SharedData->iResult > 0);
+
+	// shutdown the connection since we're done
+	SharedData->iResult = shutdown(ClientSocket, SD_SEND);
+	if (SharedData->iResult == SOCKET_ERROR)
+	{
+		printf("shutdown failed with error: %d\n", WSAGetLastError());
+		closesocket(ClientSocket);
+		ClientSocket = INVALID_SOCKET;
+		return;
+	}
+
+	closesocket(ClientSocket);
+	ClientSocket = INVALID_SOCKET;
 }
 
 int main(void)
@@ -47,10 +133,12 @@ int main(void)
 	int iResult;
 
 	SOCKET ListenSocket = INVALID_SOCKET;
-	std::vector<SOCKET> ClientSocket = { INVALID_SOCKET };
+	SOCKET ClientSocket = INVALID_SOCKET;
 
 	struct addrinfo *result = NULL;
 	struct addrinfo hints;
+
+	SHAREDDATA SharedData;
 
 	int iSendResult;
 	char recvbuf[DEFAULT_BUFLEN];
@@ -103,31 +191,38 @@ int main(void)
 
 	freeaddrinfo(result);
 
-	iResult = listen(ListenSocket, SOMAXCONN);
-	if (iResult == SOCKET_ERROR)
-	{
-		printf("listen failed with error: %d\n", WSAGetLastError());
-		closesocket(ListenSocket);
-		WSACleanup();
-		return 1;
-	}
+	_beginthread(outbound, 0, &SharedData);
 
-	// Accept a client socket
-	ClientSocket.push_back(accept(ListenSocket, NULL, NULL));
-	if (ClientSocket.back() == INVALID_SOCKET)
+	while (1)
 	{
-		printf("accept failed with error: %d\n", WSAGetLastError());
-		closesocket(ListenSocket);
-		WSACleanup();
-		return 1;
-	}
+		iResult = listen(ListenSocket, SOMAXCONN);
+		if (iResult == SOCKET_ERROR)
+		{
+			printf("listen failed with error: %d\n", WSAGetLastError());
+			closesocket(ListenSocket);
+			WSACleanup();
+			return 1;
+		}
 
-	//_beginthread(SendData, 0, &ClientSocket);
+		// Accept a client socket
+		ClientSocket = accept(ListenSocket, NULL, NULL);
+		if (ClientSocket == INVALID_SOCKET)
+		{
+			printf("accept failed with error: %d\n", WSAGetLastError());
+			closesocket(ListenSocket);
+			WSACleanup();
+			return 1;
+		}
+
+		SharedData.ClientSocket.push_back(ClientSocket);
+
+		_beginthread(inbound, 0, &SharedData);
+	}
 
 	// No longer need server socket
 	closesocket(ListenSocket);
 
-	// Receive until the peer shuts down the connection
+/*	// Receive until the peer shuts down the connection
 	do {
 
 		iResult = recv(ClientSocket.back(), recvbuf, recvbuflen, 0);
@@ -155,7 +250,7 @@ int main(void)
 			printf("Bytes sent: %d\n", iSendResult);
 			
 			printf("Message sent: ");
-			for (int i = 0; i < iResult; i++)
+			for (int i = 0; i < iSendResult; i++)
 			{
 				printf("%c", recvbuf[i]);
 			}
@@ -188,7 +283,8 @@ int main(void)
 	// cleanup
 	printf("Cleanup\n");
 	closesocket(ClientSocket.back());
-	ClientSocket.pop_back();
+	ClientSocket.pop_back();*/
+
 	WSACleanup();
 
 	return 0;

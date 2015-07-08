@@ -79,13 +79,13 @@ void ReceiveData(void *info)
 		iResult = recv(*ConnectSocket, recvbuf, recvbuflen, 0);
 		if (iResult > 0)
 		{
-			/*printf("Bytes received: %d\n", iResult);
+			printf("Bytes received: %d\n", iResult);
 			printf("Message received: ");
 			for (int i = 0; i < iResult; i++)
 			{
 				printf("%c", recvbuf[i]);
 			}
-			printf("\n\n");*/
+			printf("\n\n");
 		}
 		else if (iResult == 0)
 		{
