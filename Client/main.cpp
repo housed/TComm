@@ -106,9 +106,6 @@ int main(int argc, char **argv)
 	struct addrinfo *result = NULL,
 		*ptr = NULL,
 		hints;
-	/*char sendbuf[DEFAULT_BUFLEN];
-	char recvbuf[DEFAULT_BUFLEN];
-	int recvbuflen = DEFAULT_BUFLEN;*/
 	int iResult;
 
 	// Validate the parameters
@@ -178,72 +175,8 @@ int main(int argc, char **argv)
 	handle[1] = (HANDLE)_beginthread(ReceiveData, 0, &ConnectSocket);
 	WaitForMultipleObjects(2, handle, TRUE, INFINITE);
 
-	/*
-	do
-	{
-		std::cout << "Enter message: ";
-		std::cin.getline(sendbuf, DEFAULT_BUFLEN);
-
-		if (strcmp(sendbuf, "/disconnect") == 0)
-		{
-			// shutdown the connection since no more data will be sent
-			iResult = shutdown(ConnectSocket, SD_SEND);
-			if (iResult == SOCKET_ERROR)
-			{
-				printf("shutdown failed with error: %d\n", WSAGetLastError());
-				closesocket(ConnectSocket);
-				WSACleanup();
-				return 1;
-			}
-		}
-		else
-		{
-			// Send buffer.
-			iResult = send(ConnectSocket, sendbuf, (int)strlen(sendbuf), 0);
-			if (iResult == SOCKET_ERROR)
-			{
-				printf("send failed with error: %d\n", WSAGetLastError());
-				closesocket(ConnectSocket);
-				WSACleanup();
-				return 1;
-			}
-
-			printf("\nBytes sent: %d\n", iResult);
-
-			printf("Message sent: ");
-			for (int i = 0; i < iResult; i++)
-			{
-				printf("%c", sendbuf[i]);
-			}
-			printf("\n");
-		}
-
-		// Receive buffer.
-		iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
-		if (iResult > 0)
-		{
-			printf("Bytes received: %d\n", iResult);
-			printf("Message received: ");
-			for (int i = 0; i < iResult; i++)
-			{
-				printf("%c", recvbuf[i]);
-			}
-			printf("\n\n");
-		}
-		else if (iResult == 0)
-		{
-			printf("Connection closed\n");
-		}
-		else
-		{
-			printf("recv failed with error: %d\n", WSAGetLastError());
-		}		
-
-	} while (iResult > 0);
-	*/
-
 	// cleanup
-	printf("Cleanup!\n");
+	printf("Cleanup\n");
 	closesocket(ConnectSocket);
 	WSACleanup();
 
