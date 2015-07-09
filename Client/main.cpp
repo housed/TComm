@@ -54,14 +54,14 @@ void SendData(void *info)
 				return;
 			}
 
-			/*printf("\nBytes sent: %d\n", iResult);
+			printf("\nBytes sent: %d\n", iResult);
 
 			printf("Message sent: ");
 			for (int i = 0; i < iResult; i++)
 			{
 				printf("%c", sendbuf[i]);
 			}
-			printf("\n");*/
+			printf("\n");
 		}
 
 	} while (iResult > 0);
@@ -71,7 +71,7 @@ void ReceiveData(void *info)
 {
 	SOCKET *ConnectSocket = (SOCKET *)info;
 	char recvbuf[DEFAULT_BUFLEN];
-	int iResult;
+	int iResult = 0;
 	int recvbuflen = DEFAULT_BUFLEN;
 
 	do
