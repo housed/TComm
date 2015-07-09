@@ -10,6 +10,7 @@
 
 #include <process.h>
 #include <vector>
+#include <iostream>
 
 // Need to link with Ws2_32.lib
 #pragma comment (lib, "Ws2_32.lib")
@@ -23,7 +24,7 @@ struct SHAREDDATA
 	char recvbuf[DEFAULT_BUFLEN] = { NULL };
 	int recvbuflen = DEFAULT_BUFLEN;
 	int iResult = 0;
-	int iSendResult = 0;
+	int iSendResult = 0; 
 	std::vector<SOCKET> ClientSocket;
 };
 
@@ -97,6 +98,21 @@ void inbound(void *info)
 
 	} while (SharedData->iResult > 0);
 
+	std::cout << "Looking for ClientSocket " << ClientSocket << "\n";
+	for (int i = 0; i < SharedData->ClientSocket.size(); i++)
+	{
+		std::cout << i << ": " << SharedData->ClientSocket[i] << "\n";
+	}
+
+	for (int i = 0; i < SharedData->ClientSocket.size(); i++)
+	{
+		if (ClientSocket == SharedData->ClientSocket[i])
+		{
+			printf("Found it!\n");
+			SharedData->ClientSocket.erase(SharedData->ClientSocket.begin() + i);
+		}
+	}
+
 	// shutdown the connection since we're done
 	SharedData->iResult = shutdown(ClientSocket, SD_SEND);
 	if (SharedData->iResult == SOCKET_ERROR)
@@ -109,10 +125,14 @@ void inbound(void *info)
 
 	closesocket(ClientSocket);
 	ClientSocket = INVALID_SOCKET;
+
+	printf("Connection closed\n\n");
 }
 
 int main(void)
 {
+	SetConsoleTitle("Server");
+
 	WSADATA wsaData;
 	int iResult;
 

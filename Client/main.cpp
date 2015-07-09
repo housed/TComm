@@ -19,49 +19,66 @@
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "27015"
 
+struct INFO
+{
+	char username[DEFAULT_BUFLEN];
+	SOCKET ConnectSocket = INVALID_SOCKET;
+};
+
+const char USERNAME[] = "smash";
+
 void SendData(void *info)
 {
-	SOCKET *ConnectSocket = (SOCKET *)info;
+	INFO *ConnectInfo = (INFO *)info;
+	SOCKET ConnectSocket = ConnectInfo->ConnectSocket;
+	char username[DEFAULT_BUFLEN];
+	char input[DEFAULT_BUFLEN];
+	char message[DEFAULT_BUFLEN];
 	char sendbuf[DEFAULT_BUFLEN];
 	int iResult = 0;
 
 	do
 	{
-		printf(" > ");
-		std::cin.getline(sendbuf, DEFAULT_BUFLEN);
+		//printf(" > ");
+		std::cin.getline(input, DEFAULT_BUFLEN);
 
-		if (strcmp(sendbuf, "/disconnect") == 0)
+		if (strcmp(input, "/disconnect") == 0)
 		{
 			// shutdown the connection since no more data will be sent
-			iResult = shutdown(*ConnectSocket, SD_SEND);
+			iResult = shutdown(ConnectSocket, SD_SEND);
 			if (iResult == SOCKET_ERROR)
 			{
 				printf("shutdown failed with error: %d\n", WSAGetLastError());
-				closesocket(*ConnectSocket);
+				closesocket(ConnectSocket);
 				WSACleanup();
 				return;
 			}
 		}
 		else
 		{
+			std::strcpy(username, ConnectInfo->username);
+			std::strcat(username, ": ");
+			std::strcpy(message, username);
+			std::strcat(message, input);
+			std::strcpy(sendbuf, message);
 			// Send buffer.
-			iResult = send(*ConnectSocket, sendbuf, (int)strlen(sendbuf), 0);
+			iResult = send(ConnectSocket, sendbuf, (int)strlen(sendbuf), 0);
 			if (iResult == SOCKET_ERROR)
 			{
 				printf("send failed with error: %d\n", WSAGetLastError());
-				closesocket(*ConnectSocket);
+				closesocket(ConnectSocket);
 				WSACleanup();
 				return;
 			}
 
-			printf("\nBytes sent: %d\n", iResult);
+			/*printf("\nBytes sent: %d\n", iResult);
 
 			printf("Message sent: ");
 			for (int i = 0; i < iResult; i++)
 			{
 				printf("%c", sendbuf[i]);
 			}
-			printf("\n");
+			printf("\n");*/
 		}
 
 	} while (iResult > 0);
@@ -69,18 +86,19 @@ void SendData(void *info)
 
 void ReceiveData(void *info)
 {
-	SOCKET *ConnectSocket = (SOCKET *)info;
+	INFO *ConnectInfo = (INFO *)info;
+	SOCKET ConnectSocket = ConnectInfo->ConnectSocket;
 	char recvbuf[DEFAULT_BUFLEN];
 	int iResult = 0;
 	int recvbuflen = DEFAULT_BUFLEN;
 
 	do
 	{
-		iResult = recv(*ConnectSocket, recvbuf, recvbuflen, 0);
+		iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
 		if (iResult > 0)
 		{
-			printf("Bytes received: %d\n", iResult);
-			printf("Message received: ");
+			//printf("\nBytes received: %d\n", iResult);
+			//printf("Message received: ");
 			for (int i = 0; i < iResult; i++)
 			{
 				printf("%c", recvbuf[i]);
@@ -101,12 +119,17 @@ void ReceiveData(void *info)
 
 int main(int argc, char **argv)
 {
+	SetConsoleTitle(L"Client");
+
 	WSADATA wsaData;
 	SOCKET ConnectSocket = INVALID_SOCKET;
 	struct addrinfo *result = NULL,
 		*ptr = NULL,
 		hints;
 	int iResult;
+
+	INFO ConnectInfo;
+	char host[24];
 
 	// Validate the parameters
 	//if (argc != 2)
@@ -123,13 +146,18 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	printf("Enter a username: ");
+	std::cin.getline(ConnectInfo.username, DEFAULT_BUFLEN);
+	printf("Connect to: ");
+	std::cin.getline(host, 24);
+
 	ZeroMemory(&hints, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
 
 	// Resolve the server address and port
-	iResult = getaddrinfo("localhost", DEFAULT_PORT, &hints, &result);
+	iResult = getaddrinfo(host, DEFAULT_PORT, &hints, &result);
 	if (iResult != 0)
 	{
 		printf("getaddrinfo failed with error: %d\n", iResult);
@@ -170,9 +198,12 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	ConnectInfo.ConnectSocket = ConnectSocket;
+	printf("\nWelcome, %s!\n\n", ConnectInfo.username);
+
 	HANDLE handle[2];
-	handle[0] = (HANDLE)_beginthread(SendData, 0, &ConnectSocket);
-	handle[1] = (HANDLE)_beginthread(ReceiveData, 0, &ConnectSocket);
+	handle[0] = (HANDLE)_beginthread(SendData, 0, &ConnectInfo);
+	handle[1] = (HANDLE)_beginthread(ReceiveData, 0, &ConnectInfo);
 	WaitForMultipleObjects(2, handle, TRUE, INFINITE);
 
 	// cleanup
