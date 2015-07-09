@@ -109,11 +109,11 @@ int main(int argc, char **argv)
 	int iResult;
 
 	// Validate the parameters
-	if (argc != 2)
-	{
-		printf("usage: %s server-name\n", argv[0]);
-		return 1;
-	}
+	//if (argc != 2)
+	//{
+	//	printf("usage: %s server-name\n", argv[0]);
+	//	return 1;
+	//}
 
 	// Initialize Winsock
 	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -129,7 +129,7 @@ int main(int argc, char **argv)
 	hints.ai_protocol = IPPROTO_TCP;
 
 	// Resolve the server address and port
-	iResult = getaddrinfo(argv[1], DEFAULT_PORT, &hints, &result);
+	iResult = getaddrinfo("localhost", DEFAULT_PORT, &hints, &result);
 	if (iResult != 0)
 	{
 		printf("getaddrinfo failed with error: %d\n", iResult);
