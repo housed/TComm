@@ -24,7 +24,7 @@ struct SHAREDDATA
 	char recvbuf[DEFAULT_BUFLEN] = { NULL };
 	int recvbuflen = DEFAULT_BUFLEN;
 	int iResult = 0;
-	int iSendResult = 0; 
+	int iSendResult = 0;
 	std::vector<SOCKET> ClientSocket;
 };
 
@@ -47,8 +47,9 @@ void outbound(void *info)
 					SharedData->ClientSocket[i] = INVALID_SOCKET;
 					SharedData->ClientSocket.erase(SharedData->ClientSocket.begin() + i);
 				}
-				else
+				/*else
 				{
+					
 					printf("Bytes sent: %d\n", iSendResult);
 					printf("Message sent: ");
 					for (int i = 0; i < iSendResult; i++)
@@ -56,9 +57,10 @@ void outbound(void *info)
 						printf("%c", SharedData->recvbuf[i]);
 					}
 					printf("\n\n");
-				}
+					
+				}*/
 			}
-
+			Sleep(200); // To make sure that iResult = 0 isn't called too quickly for the inbound thread
 			SharedData->iResult = 0;
 		}
 	}
@@ -75,18 +77,17 @@ void inbound(void *info)
 
 		if (SharedData->iResult > 0)
 		{
-			printf("Bytes received: %d\n", SharedData->iResult);
-
-			printf("Message received: ");
+			//printf("Bytes received: %d\n", SharedData->iResult);
+			//printf("Message received: ");
 			for (int i = 0; i < SharedData->iResult; i++)
 			{
 				printf("%c", SharedData->recvbuf[i]);
 			}
-			printf("\n\n");
+			printf("\n");
 		}
 		else if (SharedData->iResult == 0)
 		{
-			printf("Connection closing...\n");
+			printf("\nConnection closing...\n");
 		}
 		else
 		{
@@ -118,9 +119,6 @@ void inbound(void *info)
 	if (SharedData->iResult == SOCKET_ERROR)
 	{
 		printf("shutdown failed with error: %d\n", WSAGetLastError());
-		closesocket(ClientSocket);
-		ClientSocket = INVALID_SOCKET;
-		return;
 	}
 
 	closesocket(ClientSocket);
@@ -189,6 +187,8 @@ int main(void)
 
 	freeaddrinfo(result);
 
+	printf("The server is running...\n\n");
+
 	_beginthread(outbound, 0, &SharedData);
 
 	while (1)
@@ -215,6 +215,18 @@ int main(void)
 		SharedData.ClientSocket.push_back(ClientSocket);
 
 		_beginthread(inbound, 0, &SharedData);
+	}
+
+	for (int i = 0; i < SharedData.ClientSocket.size(); i++)
+	{
+		iResult = shutdown(SharedData.ClientSocket[i], SD_SEND);
+		if (iResult == SOCKET_ERROR)
+		{
+			printf("shutdown failed with error: %d\n", WSAGetLastError());
+		}
+
+		closesocket(SharedData.ClientSocket[i]);
+		SharedData.ClientSocket[i] = INVALID_SOCKET;
 	}
 
 	closesocket(ListenSocket);

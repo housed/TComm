@@ -27,7 +27,7 @@ struct INFO
 
 const char USERNAME[] = "smash";
 
-void SendData(void *info)
+void outbound(void *info)
 {
 	INFO *ConnectInfo = (INFO *)info;
 	SOCKET ConnectSocket = ConnectInfo->ConnectSocket;
@@ -37,9 +37,20 @@ void SendData(void *info)
 	char sendbuf[DEFAULT_BUFLEN];
 	int iResult = 0;
 
+	std::strcpy(sendbuf, ConnectInfo->username);
+	std::strcat(sendbuf, " has connected\n");
+
+	iResult = send(ConnectSocket, sendbuf, (int)strlen(sendbuf), 0);
+	if (iResult == SOCKET_ERROR)
+	{
+		printf("send failed with error: %d\n", WSAGetLastError());
+		closesocket(ConnectSocket);
+		WSACleanup();
+		return;
+	}
+
 	do
 	{
-		//printf(" > ");
 		std::cin.getline(input, DEFAULT_BUFLEN);
 
 		if (strcmp(input, "/disconnect") == 0)
@@ -76,7 +87,7 @@ void SendData(void *info)
 			printf("Message sent: ");
 			for (int i = 0; i < iResult; i++)
 			{
-				printf("%c", sendbuf[i]);
+			printf("%c", sendbuf[i]);
 			}
 			printf("\n");*/
 		}
@@ -84,7 +95,7 @@ void SendData(void *info)
 	} while (iResult > 0);
 }
 
-void ReceiveData(void *info)
+void inbound(void *info)
 {
 	INFO *ConnectInfo = (INFO *)info;
 	SOCKET ConnectSocket = ConnectInfo->ConnectSocket;
@@ -103,7 +114,7 @@ void ReceiveData(void *info)
 			{
 				printf("%c", recvbuf[i]);
 			}
-			printf("\n\n");
+			printf("\n");
 		}
 		else if (iResult == 0)
 		{
@@ -202,8 +213,8 @@ int main(int argc, char **argv)
 	printf("\nWelcome, %s!\n\n", ConnectInfo.username);
 
 	HANDLE handle[2];
-	handle[0] = (HANDLE)_beginthread(SendData, 0, &ConnectInfo);
-	handle[1] = (HANDLE)_beginthread(ReceiveData, 0, &ConnectInfo);
+	handle[0] = (HANDLE)_beginthread(outbound, 0, &ConnectInfo);
+	handle[1] = (HANDLE)_beginthread(inbound, 0, &ConnectInfo);
 	WaitForMultipleObjects(2, handle, TRUE, INFINITE);
 
 	// cleanup
